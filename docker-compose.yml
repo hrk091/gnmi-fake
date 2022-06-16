@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  oc01:
+    build:
+      context: .
+    image: gnmi_fake
+    ports:
+      - 9340:9339
+    volumes:
+      - ./testdata.json:/opt/testdata.json
+    command: "-bind_address :9339 -config /opt/testdata.json -notls"
+  oc02:
+    image: gnmi_fake
+    ports:
+      - 9341:9339
+    volumes:
+      - ./testdata.json:/opt/testdata.json
+    command: "-bind_address :9339 -config /opt/testdata.json -notls"
