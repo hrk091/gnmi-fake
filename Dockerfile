@@ -21,6 +21,6 @@ FROM scratch
 WORKDIR /src
 COPY --from=build /src/gnmi_fake /src/gnmi_fake
 
-EXPOSE 8000
+EXPOSE 9339
 
-ENTRYPOINT ["/src/gnmi_fake"]
+ENTRYPOINT ["/src/gnmi_fake", "-bind_address", ":9339", "-config", "/opt/testdata.json"]
