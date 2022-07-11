@@ -2,28 +2,109 @@
   "openconfig-interfaces:interfaces": {
     "interface": [
       {
-        "name": "admin",
         "config": {
-          "name": "admin"
-        }
-      },
-      {
+          "description": "foo",
+          "enabled": true,
+          "mtu": 9000,
+          "name": "Ethernet1",
+          "type": "iana-if-type:ethernetCsmacd"
+        },
         "name": "Ethernet1",
-        "config": {
-          "name": "Ethernet1"
+        "state": {
+          "admin-status": "UP",
+          "oper-status": "UP"
+        },
+        "subinterfaces": {
+          "subinterface": []
         }
       },
       {
+        "config": {
+          "description": "foo",
+          "enabled": true,
+          "mtu": 9000,
+          "name": "Ethernet2",
+          "type": "iana-if-type:ethernetCsmacd"
+        },
         "name": "Ethernet2",
-        "config": {
-          "name": "Ethernet2"
+        "state": {
+          "admin-status": "UP",
+          "oper-status": "UP"
+        },
+        "subinterfaces": {
+          "subinterface": []
         }
       },
       {
-        "name": "Ethernet3",
         "config": {
-          "name": "Ethernet3"
+          "description": "foo",
+          "enabled": true,
+          "mtu": 9000,
+          "name": "Ethernet3",
+          "type": "iana-if-type:ethernetCsmacd"
+        },
+        "name": "Ethernet3",
+        "state": {
+          "admin-status": "UP",
+          "oper-status": "UP"
+        },
+        "subinterfaces": {
+          "subinterface": []
         }
+      },
+      {
+        "config": {
+          "description": "foo",
+          "enabled": true,
+          "mtu": 9000,
+          "name": "Ethernet4",
+          "type": "iana-if-type:ethernetCsmacd"
+        },
+        "name": "Ethernet4",
+        "state": {
+          "admin-status": "UP",
+          "oper-status": "UP"
+        },
+        "subinterfaces": {
+          "subinterface": []
+        }
+      }
+    ]
+  },
+  "openconfig-vlan:vlans": {
+    "vlan": [
+      {
+        "config": {
+          "name": "VLAN1000",
+          "status": "ACTIVE",
+          "vlan-id": 1000
+        },
+        "members": {
+          "member": []
+        },
+        "vlan-id": 1000
+      },
+      {
+        "config": {
+          "name": "VLAN1001",
+          "status": "ACTIVE",
+          "vlan-id": 1001
+        },
+        "members": {
+          "member": []
+        },
+        "vlan-id": 1001
+      },
+      {
+        "config": {
+          "name": "VLAN1002",
+          "status": "ACTIVE",
+          "vlan-id": 1002
+        },
+        "members": {
+          "member": []
+        },
+        "vlan-id": 1002
       }
     ]
   }
