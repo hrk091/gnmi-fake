@@ -13,9 +13,6 @@
         "state": {
           "admin-status": "UP",
           "oper-status": "UP"
-        },
-        "subinterfaces": {
-          "subinterface": []
         }
       },
       {
@@ -30,9 +27,6 @@
         "state": {
           "admin-status": "UP",
           "oper-status": "UP"
-        },
-        "subinterfaces": {
-          "subinterface": []
         }
       },
       {
@@ -47,9 +41,6 @@
         "state": {
           "admin-status": "UP",
           "oper-status": "UP"
-        },
-        "subinterfaces": {
-          "subinterface": []
         }
       },
       {
@@ -64,9 +55,6 @@
         "state": {
           "admin-status": "UP",
           "oper-status": "UP"
-        },
-        "subinterfaces": {
-          "subinterface": []
         }
       }
     ]
@@ -79,9 +67,6 @@
           "status": "ACTIVE",
           "vlan-id": 1000
         },
-        "members": {
-          "member": []
-        },
         "vlan-id": 1000
       },
       {
@@ -90,9 +75,6 @@
           "status": "ACTIVE",
           "vlan-id": 1001
         },
-        "members": {
-          "member": []
-        },
         "vlan-id": 1001
       },
       {
@@ -100,9 +82,6 @@
           "name": "VLAN1002",
           "status": "ACTIVE",
           "vlan-id": 1002
-        },
-        "members": {
-          "member": []
         },
         "vlan-id": 1002
       }
