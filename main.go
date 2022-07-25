@@ -63,6 +63,11 @@ func (s *server) Set(ctx context.Context, req *pb.SetRequest) (*pb.SetResponse, 
 	return s.Server.Set(ctx, req)
 }
 
+// Subscribe overrides the Subscribe func of gnmi.Target to provide user auth.
+func (s *server) Subscribe(stream pb.GNMI_SubscribeServer) error {
+	return status.Error(codes.Unimplemented, "Subscribe is not implemented.")
+}
+
 func main() {
 	model := gnmi.NewModel(modeldata.ModelData,
 		reflect.TypeOf((*gostruct.Device)(nil)),
