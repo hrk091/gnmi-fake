@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
 	"reflect"
+	"time"
 
 	log "github.com/golang/glog"
 	"golang.org/x/net/context"
@@ -31,6 +33,7 @@ var (
 
 type server struct {
 	*gnmi.Server
+	ch chan *pb.Notification
 }
 
 func newServer(model *gnmi.Model, config []byte) (*server, error) {
@@ -60,12 +63,91 @@ func (s *server) Set(ctx context.Context, req *pb.SetRequest) (*pb.SetResponse, 
 		return nil, status.Error(codes.PermissionDenied, msg)
 	}
 	log.Infof("allowed a Set request: %v", msg)
-	return s.Server.Set(ctx, req)
+	resp, err := s.Server.Set(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if s.ch != nil {
+		noti := &pb.Notification{
+			Timestamp: time.Now().UnixNano(),
+			Prefix:    req.GetPrefix(),
+			Update:    append(req.GetUpdate(), req.GetReplace()...),
+			Delete:    req.GetDelete(),
+		}
+		s.ch <- noti
+	}
+	return resp, err
 }
 
 // Subscribe overrides the Subscribe func of gnmi.Target to provide user auth.
 func (s *server) Subscribe(stream pb.GNMI_SubscribeServer) error {
-	return status.Error(codes.Unimplemented, "Subscribe is not implemented.")
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer func() {
+		cancel()
+		s.ch = nil
+	}()
+
+	if stream == nil {
+		return status.Error(codes.FailedPrecondition, "cannot start client: stream is nil")
+	}
+
+	query, err := stream.Recv()
+	if err == io.EOF {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	log.Infof("Received initial query %v", query)
+
+	subscribe := query.GetSubscribe()
+	if subscribe == nil {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("first message must be SubscriptionList: %q", query))
+	}
+
+	s.ch = make(chan *pb.Notification)
+
+	go func() {
+		for {
+			log.Infof("send loop started")
+			if s.ch == nil {
+				log.Infof("channel is already closed. send loop stopped")
+				return
+			}
+
+			log.Info("waiting update notification...")
+			select {
+			case noti := <-s.ch:
+				log.Infof("update notification: %v", noti)
+				resp := &pb.SubscribeResponse{
+					Response: &pb.SubscribeResponse_Update{
+						Update: noti,
+					},
+				}
+				if err := stream.Send(resp); err != nil {
+					return
+				}
+			case <-ctx.Done():
+				log.Info("cancelled. send loop stopped")
+				return
+			}
+		}
+	}()
+
+	for {
+		log.Infof("recv loop started")
+		log.Info("waiting client request...")
+		r, err := stream.Recv()
+
+		log.Infof("client request received: %v, %v", r, err)
+		if err == io.EOF {
+			log.Infof("EOF")
+			return nil
+		} else if err != nil {
+			log.Error(err)
+			return err
+		}
+	}
 }
 
 func main() {
