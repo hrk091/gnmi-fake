@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"google.golang.org/grpc/peer"
 	"io"
 	"io/ioutil"
 	"net"
@@ -33,7 +34,7 @@ var (
 
 type server struct {
 	*gnmi.Server
-	ch chan *pb.Notification
+	subChannels map[string]chan *pb.Notification
 }
 
 func newServer(model *gnmi.Model, config []byte) (*server, error) {
@@ -41,7 +42,7 @@ func newServer(model *gnmi.Model, config []byte) (*server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &server{Server: s}, nil
+	return &server{Server: s, subChannels: map[string]chan *pb.Notification{}}, nil
 }
 
 // Get overrides the Get func of gnmi.Target to provide user auth.
@@ -67,14 +68,14 @@ func (s *server) Set(ctx context.Context, req *pb.SetRequest) (*pb.SetResponse, 
 	if err != nil {
 		return nil, err
 	}
-	if s.ch != nil {
-		noti := &pb.Notification{
-			Timestamp: time.Now().UnixNano(),
-			Prefix:    req.GetPrefix(),
-			Update:    append(req.GetUpdate(), req.GetReplace()...),
-			Delete:    req.GetDelete(),
-		}
-		s.ch <- noti
+	noti := &pb.Notification{
+		Timestamp: time.Now().UnixNano(),
+		Prefix:    req.GetPrefix(),
+		Update:    append(req.GetUpdate(), req.GetReplace()...),
+		Delete:    req.GetDelete(),
+	}
+	for _, ch := range s.subChannels {
+		ch <- noti
 	}
 	return resp, err
 }
@@ -82,10 +83,18 @@ func (s *server) Set(ctx context.Context, req *pb.SetRequest) (*pb.SetResponse, 
 // Subscribe overrides the Subscribe func of gnmi.Target to provide user auth.
 func (s *server) Subscribe(stream pb.GNMI_SubscribeServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
+	pr, ok := peer.FromContext(ctx)
+	if !ok {
+		return fmt.Errorf("failed to get peer from context")
+	}
+
+	id := pr.Addr.String()
+	s.subChannels[id] = make(chan *pb.Notification)
 	defer func() {
 		cancel()
-		s.ch = nil
+		delete(s.subChannels, id)
 	}()
+	log.Infof("new subscription: id=%d", id)
 
 	if stream == nil {
 		return status.Error(codes.FailedPrecondition, "cannot start client: stream is nil")
@@ -105,19 +114,18 @@ func (s *server) Subscribe(stream pb.GNMI_SubscribeServer) error {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("first message must be SubscriptionList: %q", query))
 	}
 
-	s.ch = make(chan *pb.Notification)
-
 	go func() {
 		for {
 			log.Infof("send loop started")
-			if s.ch == nil {
+			ch, ok := s.subChannels[id]
+			if !ok {
 				log.Infof("channel is already closed. send loop stopped")
 				return
 			}
 
 			log.Info("waiting update notification...")
 			select {
-			case noti := <-s.ch:
+			case noti := <-ch:
 				log.Infof("update notification: %v", noti)
 				resp := &pb.SubscribeResponse{
 					Response: &pb.SubscribeResponse_Update{
