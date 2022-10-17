@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nwctl-test
+nameSuffix: -dummy
+
+resources:
+- gnmi-fake.deploy.yaml
+- gnmi-fake.svc.yaml
+- gnmi-fake.pvc.yaml
+- gnmi-fake.configmap.yaml
+
+images:
+- name: gnmi-fake
+  newName: gnmi-fake
+  newTag: latest
+
+replacements:
+- source:
+    fieldPath: metadata.name
+    kind: Deployment
+    name: gnmi-fake
+  targets:
+  - fieldPaths:
+    - spec.selector.matchLabels.app
+    select:
+      kind: Deployment
+      name: gnmi-fake
+  - fieldPaths:
+    - spec.template.metadata.labels.app
+    select:
+      kind: Deployment
+      name: gnmi-fake
+  - fieldPaths:
+    - spec.selector.app
+    select:
+      kind: Service
+      name: gnmi-fake

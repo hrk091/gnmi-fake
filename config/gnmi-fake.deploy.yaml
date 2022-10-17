@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gnmi-fake
+  labels:
+    app: gnmi-fake
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gnmi-fake
+  template:
+    metadata:
+      labels:
+        app: gnmi-fake
+    spec:
+      containers:
+      - name: gnmi-fake
+        image: gnmi-fake:latest
+        args:
+        - -notls
+        - -bind_address
+        - :9339
+        ports:
+        - containerPort: 9339
+        volumeMounts:
+        - name: gnmi-fake-pvc
+          mountPath: /src/store
+        - name: gnmi-fake-configmap
+          mountPath: /src/fixture
+      volumes:
+      - name: gnmi-fake-pvc
+        persistentVolumeClaim:
+          claimName: gnmi-fake
+      - name: gnmi-fake-configmap
+        configMap:
+          name: gnmi-fake
+
